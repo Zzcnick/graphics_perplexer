@@ -1,0 +1,36 @@
+/* engine.jj - Framework */ 
+/* ========================================= */
+options {
+	STATIC = false;
+}
+/* ========================================= */
+PARSER.begin(Engine)
+class Engine {
+	public static void main(String[] args) 
+	throws ParseException, TokenMgrError {
+		Engine parser = new Engine(System.in);
+		parser.Start();
+	}
+}	
+PARSER.end(Engine)
+/* ========================================= */
+/* REGULAR EXPRESSIONS - PARSING */
+
+SKIP : {" "}
+SKIP : {"\n" | "\r" | "\r\n"}
+SKIP : {"\t"}
+TOKEN : {< PLUS : "+" >}
+TOKEN : {< NUMBER : (["0"-"9"])+ >}
+
+/* ========================================= */
+/* FUNCTIONS - SEMANTIC ANALYZER */
+
+void Start() : {}
+{
+	<NUMBER>
+	(
+		<PLUS>
+		<NUMBER>
+	)* 
+	<EOF>
+}
