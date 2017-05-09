@@ -26,11 +26,11 @@ TOKEN : {< #WHITESPACE : ["\t", " "] >}
 
 TOKEN : {< EOL : "\n" | "\r" | "\r\n" >}
 TOKEN : {< PLUS : "+" >}
-TOKEN : {< NUMBER : <DIGITS> | <DIGITS> "." <DIGITS> | <DIGITS> "." | "." <DIGITS> >}
+TOKEN : {< NUMBER : ("-")? (<DIGITS> | <DIGITS> "." <DIGITS> | <DIGITS> "." | "." <DIGITS>) >}
 TOKEN : {< #DIGITS : (["0"-"9"])+ >}
 
 TOKEN : {< STRING : (<LETTER>)+ >} 
-TOKEN : {< #LETTER : ["a"-"z","A"-"Z"] >} 
+TOKEN : {< #LETTER : ["a"-"z","A"-"Z",".","_","-",","] >} 
 TOKEN : {< COMMENT : "\\" >}
 
 /* ========================================= */
@@ -38,29 +38,40 @@ TOKEN : {< COMMENT : "\\" >}
 
 void Start() throws NumberFormatException, FileNotFoundException :
 {
-	String val;
+	ArrayDeque<Object> cmd;
 	Canvas c = new Canvas(500, 500, 255, 255, 255);
 }
 {
 	(
-		val = Command()
+		cmd = Command()
 		<EOL>
-		{ System.out.println(val); }	
+		{ System.out.println(cmd); }	
 	)*
 	{ c.save("out.ppm"); }
 	<EOF>
 }
 
-String Command() : 
+ArrayDeque<Object> Command() : 
 {
 	String cmd = "";
 	ArrayDeque<Object> q = new ArrayDeque<Object>();
+	double d;
+	String s;
 }
 {
-	(
-		cmd = TokenString()
-	)* 
-	{ return cmd; }
+	cmd = TokenString() 
+	{ q.add(cmd); }
+	{
+		if (cmd.equals("rotate")) {
+		   s = TokenString();
+		   q.add(s);
+		}
+	}
+	(	
+		d = TokenDouble()
+		{ q.add(d); }
+	)*
+	{ return q; }
 }
 
 /* ========================================= */

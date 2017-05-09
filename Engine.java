@@ -11,12 +11,11 @@ public class Engine implements EngineConstants {
 /* ========================================= */
 /* FUNCTIONS - SEMANTIC ANALYZER */
   final public void Start() throws ParseException, NumberFormatException, FileNotFoundException {
-        String val;
+        ArrayDeque<Object> cmd;
         Canvas c = new Canvas(500, 500, 255, 255, 255);
     label_1:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case EOL:
       case STRING:
         ;
         break;
@@ -24,30 +23,39 @@ public class Engine implements EngineConstants {
         jj_la1[0] = jj_gen;
         break label_1;
       }
-      val = Command();
+      cmd = Command();
       jj_consume_token(EOL);
-                  System.out.println(val);
+                  System.out.println(cmd);
     }
           c.save("out.ppm");
     jj_consume_token(0);
   }
 
-  final public String Command() throws ParseException {
+  final public ArrayDeque<Object> Command() throws ParseException {
         String cmd = "";
         ArrayDeque<Object> q = new ArrayDeque<Object>();
+        double d;
+        String s;
+    cmd = TokenString();
+          q.add(cmd);
+                if (cmd.equals("rotate")) {
+                   s = TokenString();
+                   q.add(s);
+                }
     label_2:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case STRING:
+      case NUMBER:
         ;
         break;
       default:
         jj_la1[1] = jj_gen;
         break label_2;
       }
-      cmd = TokenString();
+      d = TokenDouble();
+                  q.add(d);
     }
-          {if (true) return cmd;}
+          {if (true) return q;}
     throw new Error("Missing return statement in function");
   }
 
@@ -82,7 +90,7 @@ public class Engine implements EngineConstants {
       jj_la1_init_0();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x110,0x100,};
+      jj_la1_0 = new int[] {0x100,0x40,};
    }
 
   /** Constructor with InputStream. */
