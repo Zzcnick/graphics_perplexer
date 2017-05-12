@@ -6,13 +6,13 @@ options {
 
 /* ========================================= */
 PARSER_BEGIN(Engine)
-class Engine {
+import java.io.*;
+import java.util.*;
+public class Engine {
 	public static void main(String[] args) 
-	throws ParseException, TokenMgrError {
+	throws ParseException, TokenMgrError, FileNotFoundException {
 		Engine parser = new Engine(System.in);
-		Canvas c = new Canvas(500, 500, 255, 255, 255);
-		int ret = parser.Start();
-		System.out.println(ret);
+		parser.Start();
 	}
 }	
 PARSER_END(Engine)
@@ -21,38 +21,78 @@ PARSER_END(Engine)
 /* REGULAR EXPRESSIONS - PARSING */
 
 SKIP : {" "}
-SKIP : {"\n" | "\r" | "\r\n"}
 SKIP : {"\t"}
+TOKEN : {< #WHITESPACE : ["\t", " "] >}
+
+TOKEN : {< EOL : "\n" | "\r" | "\r\n" >}
 TOKEN : {< PLUS : "+" >}
-TOKEN : {< NUMBER : (["0"-"9"])+ >}
+TOKEN : {< NUMBER : ("-")? (<DIGITS> | <DIGITS> "." <DIGITS> | <DIGITS> "." | "." <DIGITS>) >}
+TOKEN : {< #DIGITS : (["0"-"9"])+ >}
+
+TOKEN : {< STRING : <LETTER> ([<LETTER> | <DIGIT>])* >} 
+TOKEN : {< #LETTER : ["a"-"z","A"-"Z",".","_"] >} 
+TOKEN : {< #DIGIT : ["0"-"9"] >}
+TOKEN : {< COMMENT : "\\" >}
 
 /* ========================================= */
 /* FUNCTIONS - SEMANTIC ANALYZER */
 
-void Start() : 
+void Start() throws NumberFormatException, FileNotFoundException :
 {
-	int tmp;
-	int ret;
+	ArrayDeque<Object> cmd;
+	Canvas c = new Canvas(500, 500, 255, 255, 255);
 }
 {
-	ret = TokenInt()
 	(
-		<PLUS>
-		tmp = TokenInt()
-		{ ret += tmp; }
-	)* 
-	{ return ret; }
+		cmd = Command()
+		<EOL>
+		{ System.out.println(cmd); }	
+	)*
+	{ c.save("out.ppm"); }
 	<EOF>
+}
+
+ArrayDeque<Object> Command() : 
+{
+	String cmd = "";
+	ArrayDeque<Object> q = new ArrayDeque<Object>();
+	double d;
+	String s;
+}
+{
+	cmd = TokenString() 
+	{ q.add(cmd); }
+	{
+		if (cmd.equals("rotate")) {
+		   s = TokenString();
+		   q.add(s);
+		}
+	}
+	(	
+		d = TokenDouble()
+		{ q.add(d); }
+	)*
+	{ return q; }
 }
 
 /* ========================================= */
 /* FUNCTIONS - HELPERS */
 
-void TokenInt() throws NumberFormatException : 
+String TokenString() :
+{
+	Token t;
+}
+{
+	t = <STRING>
+	{ return t.image; }
+}
+
+double TokenDouble() throws NumberFormatException : 
 {
 	Token t;
 }
 {
 	t = <NUMBER>
-	return Integer.parseInt( t.image ); 
+	{ return Double.parseDouble( t.image ); }
 }
+

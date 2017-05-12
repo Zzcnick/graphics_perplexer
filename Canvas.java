@@ -58,6 +58,11 @@ public class Canvas {
 	mode = md;
     }
 
+    // Execution Command for Parser
+    public boolean execute(String command, ArrayDeque<Object> buffer) {
+	return false;
+    }
+
     // Accessors + Mutators
     public int[] getXY() {
 	return new int[]{x, y};

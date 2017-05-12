@@ -3,8 +3,42 @@ import java.util.*;
 
 public class Picture {
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 	if (args.length > 0) { // Parser
+	    
+	    // Script Reading
+	    Canvas c = new Canvas(500, 500, 255, 255, 255);
+	    String f = args[0]; // Filename
+	    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(f))));
+	    StreamTokenizer st = new StreamTokenizer(br);
+	    st.slashSlashComments(true);
+	    st.eolIsSignificant(true);
+
+	    // Initialization
+	    int token;
+	    String command = "";
+	    ArrayDeque<Object> buffer = new ArrayDeque<Object>();
+	    ArrayDeque<Integer> typebuffer = new ArrayDeque<Integer>();
+
+	    // Parsing and Execution
+	    while ((token = st.nextToken()) != -1) {
+		if (token == StreamTokenizer.TT_NUMBER) {
+		    System.out.println(st.nval);
+		    buffer.offer(st.nval);
+		    typebuffer.offer(token);
+		} else if (token == StreamTokenizer.TT_WORD) {
+		    System.out.println(st.sval);
+		    buffer.offer(st.sval);
+		    typebuffer.offer(token);
+		} else if (token == StreamTokenizer.TT_EOL) {
+		    System.out.println("END OF LINE: EXECUTE COMMAND\n");
+		    c.execute(command, buffer);
+		} else break; // Should Not Happen, Failsafe
+	    }
+	    c.execute(command, buffer);
+	    System.out.println("END OF FILE: EXECUTE COMMAND AND END\n");
+
+	    /* // Old Parser
 	    Canvas c = new Canvas(500, 500, 255, 255, 255);
 	    String script = args[0];
 	    File file = new File(script);	    
@@ -54,15 +88,17 @@ public class Picture {
 		} else if (cmd.equals("save")) {
 		    c.save(sc.next());
 		} else if (cmd.equals("mode")) {
-		    c.setMode(sc.nextInt());
+		c.setMode(sc.nextInt());
 		} else if (cmd.equals("reset")) {
-		    c = new Canvas(sc.nextInt(), sc.nextInt(),
-				   sc.nextInt(), sc.nextInt(), sc.nextInt());
+		c = new Canvas(sc.nextInt(), sc.nextInt(),
+		sc.nextInt(), sc.nextInt(), sc.nextInt());
 		}
-	    }
+		
+		}
+	    */
 	    return;
 	} 
-
+		
 	// Polygons ===========================
 	Canvas c = new Canvas(500, 500, 255, 255, 255, 3);
 	Pixel p = new Pixel(0,0,0);
