@@ -8,7 +8,7 @@ public class Canvas {
     private Pixel[][] canvas; // Drawing Canvas
     private Pixel[][] save; // Save State
     private Matrix edges; // Lines
-    private Matrix transform; // Transformation Matrix
+    private Stack<Matrix> transform; // Transformation Matrix
     private int x, y; // Dimensions
     private int mode; // Edges or Polygons
     
@@ -19,8 +19,8 @@ public class Canvas {
 	y = 500;
 	fill(255, 255, 255);
 	edges = new Matrix();
-	transform = Matrix.identity(4);
-	mode = 2;
+	transform = new Stack<Matrix>();
+	mode = 3;
     }
     public Canvas(int md) {
 	this();
@@ -32,8 +32,8 @@ public class Canvas {
 	this.y = y;
 	fill(255, 255, 255);
 	edges = new Matrix();
-	transform = Matrix.identity(4);
-	mode = 2;
+	transform = new Stack<Matrix>();
+	mode = 3;
     }
     public Canvas(int x, int y, int md) {
 	this(x, y);
@@ -42,7 +42,7 @@ public class Canvas {
     public Canvas(int x, int y, Pixel p) {
 	this(x, y);
 	fill(p);
-	mode = 2;
+	mode = 3;
     }
     public Canvas(int x, int y, Pixel p, int md) {
 	this(x, y, p);
@@ -51,16 +51,11 @@ public class Canvas {
     public Canvas(int x, int y, int R, int G, int B) {
 	this(x, y);
 	fill(R, G, B);
-	mode = 2;
+	mode = 3;
     }
     public Canvas(int x, int y, int R, int G, int B, int md) {
 	this(x, y, R, G, B);
 	mode = md;
-    }
-
-    // Execution Command for Parser
-    public boolean execute(String command, ArrayDeque<Object> buffer) {
-	return false;
     }
 
     // Accessors + Mutators
@@ -77,7 +72,7 @@ public class Canvas {
 	return edges;
     }
     public Matrix getTransform() {
-	return transform;
+	return transform.peek();
     }
     public int getMode() {
 	return mode;
@@ -89,25 +84,28 @@ public class Canvas {
 
     // Transformations
     public Matrix scale(double sx, double sy, double sz) {
+	if (transform.empty()) return null;
 	Matrix left = Matrix.identity(4);
 	left.set(0,0,sx);
 	left.set(1,1,sy);
 	left.set(2,2,sz);
-	transform = left.multiply(transform);
-	return transform;
+	transform.push(left.multiply(transform.pop()));
+	return transform.peek();
     }
     public Matrix scale(double s) {
 	return scale(s, s, s);
     }
     public Matrix translate(double dx, double dy, double dz) {
+	if (transform.empty()) return null;
 	Matrix left = Matrix.identity(4);
 	left.set(0,3,dx);
 	left.set(1,3,dy);
 	left.set(2,3,dz);
-	transform = left.multiply(transform);
-	return transform;
+	transform.push(left.multiply(transform.pop()));
+	return transform.peek();
     }
     public Matrix rotate(char axis, double theta) {
+	if (transform.empty()) return null;
 	Matrix left = Matrix.identity(4);
 	double rad = Math.toRadians(theta);
 	if (axis == 'z') {
@@ -128,16 +126,49 @@ public class Canvas {
 	    left.set(1,2,-1 * Math.sin(rad));
 	    left.set(2,1,Math.sin(rad));
 	}
-	transform = left.multiply(transform);
-	return transform;
+	transform.push(left.multiply(transform.pop()));
+	return transform.peek();
     }
+
+    public Matrix push() {
+	Matrix m = Matrix.identity(4);
+	if (!transform.empty())
+	    m.copy(transform.peek());
+	return transform.push(m);
+    }
+    public Matrix pop() {
+	if (!transform.empty())
+	    return transform.pop();
+	return null;
+    }
+    public Matrix peek() {
+	Matrix m = Matrix.identity(4);
+	if (!transform.empty()) 
+	    m.copy(transform.peek());
+	return m;
+    }
+
     public Matrix apply() {
-	edges.copy(transform.multiply(edges));
-	transform = Matrix.identity(4);
+	Matrix top = Matrix.identity(4);
+	if (!transform.empty()) {
+	    top.copy(transform.peek());
+	    edges.copy(top.multiply(edges));
+	}
 	return edges;
+	// transform = Matrix.identity(4);
+	// return edges;
     }
 
     // Shapes and Curves
+    // Exclusively For Parsing - Not Line Algo
+    public boolean line(double x1, double y1, double z1,
+			double x2, double y2, double z2, Pixel p) {
+	edge(x1, y1, z1, x2, y2, z2, p);
+	apply();
+	draw(2);
+	return true;
+    }
+
     public boolean circle(double cx, double cy, double z, double r, Pixel p) {
 	double x1 = cx + r;
 	double y1 = cy;
@@ -148,6 +179,8 @@ public class Canvas {
 	    edge(x1, y1, z, x2, y2, z, p);
 	    x1 = x2; y1 = y2;
 	}
+	apply(); // Coordinate System Shift
+	draw(2); // 2D
 	return true;
     }
     public boolean circle(double cx, double cy, double z, double r) {
@@ -158,6 +191,8 @@ public class Canvas {
 		       double dx, double dy, double dz, Pixel p) {
 	Matrix em = box_edges(x,y,z,dx,dy,dz,p);
 	edges.append(em);
+	apply();
+	draw(3);
 	return true;
     }
     public boolean box(double x, double y, double z, 
@@ -211,6 +246,8 @@ public class Canvas {
     public boolean sphere(double cx, double cy, double cz, double r, Pixel p) {
 	Matrix em = sphere_edges(cx,cy,cz,r,p);
 	edges.append(em);
+	apply();
+	draw(3);
 	return true;
     }
     public boolean sphere(double cx, double cy, double cz, double r) {
@@ -224,8 +261,8 @@ public class Canvas {
 	double ds = Math.PI / n; // Semicircle Step
 	double dt = ds; // Rotation Step
 	double x, y, z;
-
-	if (mode == 2) {
+	
+	if (mode == 2) { // Deprecated 
 	    // Edge Implementation ==============
 	    for (t = 0; t < 2 * Math.PI + dt/2; t += dt) {
 		for (s = 0; s < Math.PI + ds/2; s += ds) {
@@ -278,6 +315,8 @@ public class Canvas {
     public boolean torus(double cx, double cy, double cz, double r, double R, Pixel p) {
 	Matrix em = torus_edges(cx,cy,cz,r,R,p);
 	edges.append(em);
+	apply();
+	draw(3);
 	return true;
     }
     public boolean torus(double cx, double cy, double cz, double r, double R) {
@@ -304,7 +343,7 @@ public class Canvas {
 		    em.add_edge(x, y, z, x, y, z, p); // Change Later
 		}
 	    }
-	    // ==================================== */	
+	    // ==================================== */
 	}
 
 	else if (mode == 3) {
@@ -338,7 +377,7 @@ public class Canvas {
 		    c++;
 		}
 	    }
-	    
+	        
 	    // ==================================== */
 	}
 	return em;
@@ -346,7 +385,7 @@ public class Canvas {
     public Matrix torus_edges(double cx, double cy, double cz, double r, double R) {
 	return torus_edges(cx, cy, cz, r, R, new Pixel(0,0,0));
     }
-	
+    
     public boolean hermite(double x0, double y0, double x1, double y1,
 			   double dx0, double dy0, double dx1, double dy1, Pixel p) {
 	// Why Use A Matrix When You Can Just Multiply? Efficiency is important! 
@@ -363,17 +402,19 @@ public class Canvas {
 	double x = x0; double y = y0;
 	double newx, newy;
 	for (double t = 0; t < 1.001; t += 0.005) {
-	    newx = ax * t * t * t +
-		bx * t * t +
-		cx * t + 
-		dx;
-	    newy = ay * t * t * t +
-		by * t * t +
-		cy * t +
-		dy;
-	    edge(x, y, 0, newx, newy, 0, p);
-	    x = newx; y = newy;
+	        newx = ax * t * t * t +
+		    bx * t * t +
+		    cx * t + 
+		    dx;
+		    newy = ay * t * t * t +
+			by * t * t +
+			cy * t +
+			dy;
+		    edge(x, y, 0, newx, newy, 0, p);
+		    x = newx; y = newy;
 	}
+	apply();
+	draw(2);
 	return true;
     }
     public boolean hermite(double x0, double y0, double x1, double y1,
@@ -411,17 +452,19 @@ public class Canvas {
 	double x = x0; double y = y0;
 	double newx, newy;
 	for (double t = 0; t < 1.001; t += 0.005) {
-	    newx =  ax * t * t * t +
-		bx * t * t +
-		cx * t + 
-		dx;
-	    newy = ay * t * t * t +
-		by * t * t +
-		cy * t +
-		dy;
-	    edge(x, y, 0, newx, newy, 0, p);
-	    x = newx; y = newy;
+	        newx =  ax * t * t * t +
+		    bx * t * t +
+		    cx * t + 
+		    dx;
+		    newy = ay * t * t * t +
+			by * t * t +
+			cy * t +
+			dy;
+		    edge(x, y, 0, newx, newy, 0, p);
+		    x = newx; y = newy;
 	}
+	apply();
+	draw(2);
 	return true;
     }
     public boolean bezier(double x0, double y0,
@@ -459,13 +502,16 @@ public class Canvas {
     }
 
     public boolean draw() {
+	return draw(mode);
+    }
+    public boolean draw(int md) {
 	Iterator<double[]> edgelist = edges.iterator();
 	Iterator<Pixel> colors = edges.colorIterator();
 	double[] p1, p2;
 	double x1, x2, y1, y2;
 	Pixel p;
 
-	if (mode == 2) {
+	if (md == 2) {
 	    while (edgelist.hasNext()) {
 		p1 = edgelist.next();
 		p2 = edgelist.next();
@@ -477,7 +523,7 @@ public class Canvas {
 		line((int)x1, (int)y1, (int)x2, (int)y2, p);
 	    }
 	}
-	else if (mode == 3) {
+	else if (md == 3) {
 	    double x3, y3;
 	    double[] p3;
 	    while (edgelist.hasNext()) {
@@ -502,6 +548,7 @@ public class Canvas {
 		}
 	    }
 	}
+	clearEdges();
 	return true;
     }
     
@@ -510,7 +557,7 @@ public class Canvas {
 	return true;
     }
     public boolean clearTransform() {
-	transform = Matrix.identity(4);
+	transform = new Stack<Matrix>();
 	return true;
     }
 
@@ -551,7 +598,7 @@ public class Canvas {
 	}
 	return true;
     }
-    public boolean load() {
+    public boolean loadstate() {
 	if (save != null) {
 	    for (int i = 0; i < y; i++) 
 		for (int j = 0; j < x; j++) 
