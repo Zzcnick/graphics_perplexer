@@ -85,11 +85,12 @@ public class Canvas {
     // Transformations
     public Matrix scale(double sx, double sy, double sz) {
 	if (transform.empty()) return null;
-	Matrix left = Matrix.identity(4);
-	left.set(0,0,sx);
-	left.set(1,1,sy);
-	left.set(2,2,sz);
-	transform.push(left.multiply(transform.pop()));
+	Matrix m = Matrix.identity(4);
+	m.set(0,0,sx);
+	m.set(1,1,sy);
+	m.set(2,2,sz);
+	transform.push(transform.pop().multiply(m)); // Right
+	// transform.push(m.multiply(transform.pop())); // Left 
 	return transform.peek();
     }
     public Matrix scale(double s) {
@@ -97,36 +98,38 @@ public class Canvas {
     }
     public Matrix translate(double dx, double dy, double dz) {
 	if (transform.empty()) return null;
-	Matrix left = Matrix.identity(4);
-	left.set(0,3,dx);
-	left.set(1,3,dy);
-	left.set(2,3,dz);
-	transform.push(left.multiply(transform.pop()));
+	Matrix m = Matrix.identity(4);
+	m.set(0,3,dx);
+	m.set(1,3,dy);
+	m.set(2,3,dz);
+	transform.push(transform.pop().multiply(m)); // Right
+	// transform.push(m.multiply(transform.pop())); // Left
 	return transform.peek();
     }
     public Matrix rotate(char axis, double theta) {
 	if (transform.empty()) return null;
-	Matrix left = Matrix.identity(4);
+	Matrix m = Matrix.identity(4);
 	double rad = Math.toRadians(theta);
 	if (axis == 'z') {
-	    left.set(0,0,Math.cos(rad));
-	    left.set(1,1,Math.cos(rad));
-	    left.set(0,1,-1 * Math.sin(rad));
-	    left.set(1,0, Math.sin(rad));
+	    m.set(0,0,Math.cos(rad));
+	    m.set(1,1,Math.cos(rad));
+	    m.set(0,1,-1 * Math.sin(rad));
+	    m.set(1,0, Math.sin(rad));
 	} 
 	else if (axis == 'y') {
-	    left.set(0,0,Math.cos(rad));
-	    left.set(2,2,Math.cos(rad));
-	    left.set(0,2,Math.sin(rad));
-	    left.set(2,0,-1 * Math.sin(rad));
+	    m.set(0,0,Math.cos(rad));
+	    m.set(2,2,Math.cos(rad));
+	    m.set(0,2,Math.sin(rad));
+	    m.set(2,0,-1 * Math.sin(rad));
 	}
 	else if (axis == 'x') {
-	    left.set(1,1,Math.cos(rad));
-	    left.set(2,2,Math.cos(rad));
-	    left.set(1,2,-1 * Math.sin(rad));
-	    left.set(2,1,Math.sin(rad));
+	    m.set(1,1,Math.cos(rad));
+	    m.set(2,2,Math.cos(rad));
+	    m.set(1,2,-1 * Math.sin(rad));
+	    m.set(2,1,Math.sin(rad));
 	}
-	transform.push(left.multiply(transform.pop()));
+	transform.push(transform.pop().multiply(m)); // Right
+	// transform.push(m.multiply(transform.pop())); // Left
 	return transform.peek();
     }
 
