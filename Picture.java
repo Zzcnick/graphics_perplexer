@@ -31,12 +31,16 @@ public class Picture {
 		    buffer.offer(st.sval);
 		    typebuffer.offer(token);
 		} else if (token == StreamTokenizer.TT_EOL) {
-		    // System.out.println("END OF LINE: EXECUTE COMMAND\n");
+		    // System.out.println("END OF LINE: EXECUTE COMMAND\n"); // Debugging
+		    // System.out.println("COMMAND: " + buffer); // Debugging
+		    // System.out.println("TYPES  : " + typebuffer); // Debugging
 		    execute(c, buffer, typebuffer);
 		} else break; // Should Not Happen, Failsafe
 	    }
 	    execute(c, buffer, typebuffer);
-	    // System.out.println("END OF FILE: EXECUTE COMMAND AND END\n");
+	    // System.out.println("END OF FILE: EXECUTE COMMAND AND END\n"); // Debugging
+	    // System.out.println("COMMAND: " + buffer); // Debugging
+	    // System.out.println("TYPES  : " + typebuffer); // Debugging
 
 	    return;
 	} 
@@ -55,6 +59,11 @@ public class Picture {
 	    } else {
 		cmd = nextString(buffer);
 	    }
+	    int pad = 12;
+	    String cmdpad = cmd;
+	    while (cmdpad.length() < pad)
+		cmdpad += " ";
+	    System.out.println("Executing Command: " + cmdpad + "| Inputs: " + buffer);
 	    
 	    int len = typebuffer.size(); // Input - Excludes Command
 	    if (cmd.equals("line")) {
@@ -155,8 +164,6 @@ public class Picture {
 				   nextInt(buffer), nextInt(buffer),
 				   nextInt(buffer));
 	    } 
-
-	    System.out.println("Executed Command: " + cmd);
 	    buffer.clear();
 	    typebuffer.clear();
 	}

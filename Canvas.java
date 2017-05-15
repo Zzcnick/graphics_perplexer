@@ -117,8 +117,8 @@ public class Canvas {
 	else if (axis == 'y') {
 	    left.set(0,0,Math.cos(rad));
 	    left.set(2,2,Math.cos(rad));
-	    left.set(0,2,-1 * Math.sin(rad));
-	    left.set(2,0,Math.sin(rad));
+	    left.set(0,2,Math.sin(rad));
+	    left.set(2,0,-1 * Math.sin(rad));
 	}
 	else if (axis == 'x') {
 	    left.set(1,1,Math.cos(rad));
@@ -203,7 +203,7 @@ public class Canvas {
 			    double dx, double dy, double dz, Pixel p) {
 	Matrix em = new Matrix();
 	
-	if (mode == 2) {
+	if (mode == 2) { // Deprecated
 	    // Edge Implementation ==============
 	    em.add_edge(x,y,z,x+dx,y,z,p);
 	    em.add_edge(x,y,z,x,y-dy,z,p);
